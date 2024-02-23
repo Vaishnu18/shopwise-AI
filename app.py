@@ -7,6 +7,7 @@ import re
 import numpy as np
 import string
 import tensorflow as tf
+import requests
 
 tf.keras.backend.clear_session()
 
@@ -152,8 +153,46 @@ def upload():
         # pred_class = preds.argmax(axis=-1)            # Simple argmax
         pred_class = decode_predictions(preds, top=1)   # ImageNet Decode
         result = str(pred_class[0][0][1])               # Convert to string
+        global query
+        query = result
         return result
     return None
+
+@app.route('/shower',methods=['GET','POST'])
+def shower():
+    if request.method == 'GET':
+        return render_template('index2.html')
+
+    if request.method == 'POST':
+
+        username = 'shopwiseAI_admin'
+        password = 'H3*XRjhkPuU83wi'
+        headers = {
+            'Content-Type': 'application/json',
+        }
+        data = {
+            'source': 'amazon_search',
+            'domain': 'in',
+            'query': query,
+            'parse': True,
+            'render': 'html',
+        }
+        try:
+            response = requests.request(
+                'POST',
+                'https://realtime.oxylabs.io/v1/queries',
+                auth=(username, password),
+                json=data,
+                headers=headers,
+            )
+            response_json = response.json()
+
+            return jsonify(response_json.get('results', {}))
+
+            # Return the results as JSON
+
+        except requests.exceptions.RequestException as e:
+            return jsonify({'error': str(e)})
 
 #for secret key
 
